@@ -13,7 +13,7 @@ DbConnection conn = db.getConnection();
 
 var watch = Stopwatch.StartNew();
 
-// using db connection and raw sql
+// get db data using db connection and raw sql
 if (conn != null)
 {
     conn.Open();
@@ -62,7 +62,7 @@ else
     Console.WriteLine("Failed to get connection");
 }
 
-// using EF
+// get data using EF context
 watch = Stopwatch.StartNew();
 var dbPopulationCount = new Dictionary<string, long>();
 using (var context = new CitystatecountryContext())
@@ -83,6 +83,7 @@ foreach (var item in dbPopulationCount.OrderBy(o => o.Key))
 watch.Stop();
 Console.WriteLine($"Elapsed time for EF DB access (ms): {watch.ElapsedMilliseconds}");
 
+// get concrete api service data
 watch = Stopwatch.StartNew();
 var stateService = new ConcreteStatService();
 var apiPopulationCount = (await stateService.GetCountryPopulationsAsync())
@@ -99,6 +100,7 @@ watch.Stop();
 Console.WriteLine($"Elapsed time for API 'db' access time (ms): {watch.ElapsedMilliseconds}");
 
 
+// join db and api data using linq
 watch = Stopwatch.StartNew();
 
 var joinedPopulationCount = (await stateService.GetCountryPopulationsAsync())
