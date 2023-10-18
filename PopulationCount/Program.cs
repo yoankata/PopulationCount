@@ -3,12 +3,15 @@ using Backend;
 using PopulationCount;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 
 Console.WriteLine("Started");
 
 Console.WriteLine("Getting DB Connection...");
 IDbManager db = new SqliteDbManager();
 DbConnection conn = db.getConnection();
+
+var watch = Stopwatch.StartNew();
 
 // using db connection and raw sql
 if (conn != null)
@@ -37,6 +40,8 @@ if (conn != null)
             {
                 Console.WriteLine($"{reader[0], 35}: {reader[1], 20:N0}");
             }
+            watch.Stop();
+            Console.WriteLine($"Elapsed time for raw DB call (ms): {watch.ElapsedMilliseconds}");
         }
 
         catch (DbException dbex)
@@ -58,6 +63,7 @@ else
 }
 
 // using EF
+watch = Stopwatch.StartNew();
 var dbPopulationCount = new Dictionary<string, long>();
 using (var context = new CitystatecountryContext())
 {
@@ -74,7 +80,10 @@ foreach (var item in dbPopulationCount.OrderBy(o => o.Key))
     Console.WriteLine($"{item.Key,35}: {item.Value, 20:N0}");
 
 }
+watch.Stop();
+Console.WriteLine($"Elapsed time for EF DB access (ms): {watch.ElapsedMilliseconds}");
 
+watch = Stopwatch.StartNew();
 var stateService = new ConcreteStatService();
 var apiPopulationCount = (await stateService.GetCountryPopulationsAsync())
      .ToDictionary(z => z.Item1, z => z.Item2);
@@ -86,6 +95,11 @@ foreach (var item in apiPopulationCount.OrderBy(o => o.Key))
     Console.WriteLine($"{item.Key, 35}: {item.Value, 20:N0}");
 
 }
+watch.Stop();
+Console.WriteLine($"Elapsed time for API 'db' access time (ms): {watch.ElapsedMilliseconds}");
+
+
+watch = Stopwatch.StartNew();
 
 var joinedPopulationCount = (await stateService.GetCountryPopulationsAsync())
     .Where(x => !dbPopulationCount.ContainsKey(x.Item1))
@@ -98,3 +112,5 @@ foreach (var item in joinedPopulationCount.OrderBy(o => o.Key))
     Console.WriteLine($"{item.Key, 35}: {item.Value, 20:N0}");
 
 }
+watch.Stop();
+Console.WriteLine($"Elapsed time for joining DB and API data (ms): {watch.ElapsedMilliseconds}");
